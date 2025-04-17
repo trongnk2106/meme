@@ -34,9 +34,9 @@ class QdrantDBConnection:
         PointStruct(
             id=idx,
             vector=data,
-            payload={"name": name, "text": text},
+            payload={"name": name, "text": text, "image_path": image_path},
         )
-        for idx, (data, text, name) in enumerate(zip(emb, df['sentence_full'], df['name']))
+        for idx, (data, text, name, image_path) in enumerate(zip(emb, df['sentence_full'], df['name'], df['image_path']))
     ]
         self.client.upsert(self.collection_name, self.points)
         print(f"Indexed {len(self.points)} points to collection {self.collection_name}")
@@ -63,12 +63,18 @@ if __name__ == "__main__":
     qdrant_client.index_data(df, emb)
     
     res = qdrant_client.search("And Just Like That")
-    
 
-    
+    breakpoint()
+    print(res)    
     # print(len(list_of_embeddings[0]))
     # list_of_embeddings = np.array(list_of_embeddings)
     # np.save('embeddings.npy', list_of_embeddings)
     
     # df = pd.read_csv("./meme_data.csv")
+    # collection_name = "meme_collection"
+    # client = QdrantClient(url="http://103.186.100.39:6333")
+    # client.update_collection(
+    #     collection_name=f"{collection_name}",
+    #     optimizers_config=models.OptimizersConfigDiff(indexing_threshold=10000),
+    # )
     # save to q
