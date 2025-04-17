@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 import openai
 from openai import OpenAI
 import io 
+from drawTextOnImage import draw_bbox_pillow
 load_dotenv()
 openai_key = os.getenv("OPENAI_API_KEY")
 # client = OpenAI(api_key=openai_key)
@@ -188,61 +189,71 @@ class MemeGenerator:
         return res
     def memegen(self):
         response = self.client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": (
-                                    "You are a meme creator assistant with a sharp sense of humor and strong visual design skills.\n\n"
-                                    "=== CONTEXT ===\n"
-                                    f"{self.meme_topic}\n\n"
+    model="gpt-4o",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": (
+                        "You are a meme creator assistant with a sharp sense of humor and strong visual design skills.\n\n"
+                        "=== CONTEXT ===\n"
+                        f"{self.meme_topic}\n\n"
 
-                                    "=== INPUT ===\n"
-                                    "- An image containing several green bounding boxes.\n"
-                                    "- Each bounding box has a red ID number label.\n"
-                                    "- The IDs indicate the correct reading order for speech/text.\n\n"
+                        "=== INPUT ===\n"
+                        "- An image containing several green bounding boxes.\n"
+                        "- Each bounding box has a red ID number label.\n"
+                        "- The IDs indicate the correct reading order for speech/text.\n\n"
 
-                                    "=== TASK ===\n"
-                                    "For **each bounding box**, do the following:\n"
-                                    "1. **Look closely** at the visual contents inside that box.\n"
-                                    "2. Analyze the scene and context — what action, emotion, or idea is represented?\n"
-                                    "3. Generate a **short, clever, and funny caption** for the content in that box.\n"
-                                    "   - Use meme humor (relatable, absurd, ironic, satirical).\n"
-                                    "   - Adapt tone based on image style (silly, sarcastic, dry, etc.).\n"
-                                    "4. Ensure the caption fits **visually inside the box**:\n"
-                                    "   - Add line breaks (`\\n`) manually where needed.\n"
-                                    "   - Match the font size to the box size (small box = smaller font).\n"
-                                    "   - Ensure text is readable — consider both **box background color** and surrounding image region.\n"
-                                    "5. Choose a **text color** with **strong contrast** for legibility — use hex colors like `#FFFFFF`, `#000000`, `#FFD700`, etc.\n"
-                                    "6. Output one JSON object per box, exactly in this format:\n\n"
-                                    "[\n"
-                                    "  {\n"
-                                    "    \"id\": 1,\n"
-                                    "    \"text\": \"Your hilarious caption here\\nWith line breaks if needed\",\n"
-                                    "    \"fontSize\": 22,\n"
-                                    "    \"color\": \"#FFFFFF\",\n"
-                                    "    \"lineBreaks\": true\n"
-                                    "  },\n"
-                                    "  ...\n"
-                                    "]\n\n"
+                        "=== TASK ===\n"
+                        "For each bounding box:\n"
+                        "1. Analyze the visual content inside the box (facial expressions, actions, context).\n"
+                        "2. Write a short, clever, and funny caption (meme-style: ironic, absurd, relatable).\n"
+                        "   - The caption must be a single line (no line breaks).\n"
+                        "3. Choose a suitable **fontFamily** (e.g. 'Arial', 'Comic Sans MS', 'Impact') for each caption.\n"
+                        "4. Determine whether the caption should be **bold** for visual emphasis.\n\n"
 
-                                    "Make sure the humor flows well across boxes, especially if they represent a conversation or sequence. Be bold, be clever, and make it MEME-WORTHY!"
-                                )
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{self.base64_image}"
-                                }
-                            }
-                        ]
+                        "=== TEXT COLOR ===\n"
+                        "- Select **one single text color** (in hex, e.g. `#FFD700`, `#00FFFF`, `#FF69B4`, etc.) that works well across **all bounding boxes**.\n"
+                        "- The color should be chosen based on the **combined average visual background of all bounding boxes**, ensuring strong contrast and good readability.\n"
+                        "- Avoid choosing based only on a small part of a box or the full image background.\n"
+                        "- Be expressive with the color choice — try something visually interesting and meme-friendly, not just black or white.\n"
+                        "- Example tones: bright yellow for absurdity, pink for sass, mint for sarcasm, light blue for chill humor.\n\n"
+
+                        "=== OUTPUT FORMAT ===\n"
+                        "Return a list of caption objects. Each caption must include:\n"
+                        "- id\n"
+                        "- text\n"
+                        "- fontFamily\n"
+                        "- bold\n"
+                        "- color (same color for all captions)\n\n"
+                        "**Example format:**\n"
+                        "[\n"
+                        "  {\n"
+                        "    \"id\": 1,\n"
+                        "    \"text\": \"Your hilarious caption here\",\n"
+                        "    \"fontFamily\": \"Comic Sans MS\",\n"
+                        "    \"bold\": true,\n"
+                        "    \"color\": \"#FFD700\"\n"
+                        "  },\n"
+                        "  ...\n"
+                        "]\n\n"
+
+                        "Only return the list of captions as shown. Make sure the color is the same in every caption object. Be bold, funny, and visually smart!"
+                    )
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{self.base64_image}"
                     }
-                ],
-                max_tokens=1000,
-            )
+                }
+            ]
+        }
+    ],
+    max_tokens=1400,
+)
 
         llm_reponse = response.choices[0].message.content
 
@@ -286,11 +297,26 @@ if __name__ == "__main__":
 
     generator = MemeGenerator()
     # Example image path
-    image_path = "D:/Pytorch-master/YokoMeme/images_full/Drake-Hotline-Bling.png"
-    user_context="The \"Drake Hotline Bling\" meme template effectively communicates contrasting preferences or choices, showcasing a clear rejection followed by enthusiastic approval. In the first panel, Drake's disapproving gesture implies a strong dislike or refusal of an idea, concept, or action. Conversely, in the second panel, his expression transforms into one of excitement and endorsement, indicating a favorable view of an alternative option. This dynamic creates a humorous and relatable commentary on everyday decisions, societal norms, or opinions, allowing users to illustrate their approval or disapproval in a visually striking manner. The template's simplicity and engaging format make it highly adaptable, enabling users to convey complex attitudes with just a few words alongside the images."
-    res = generator.generate_meme(image_path, user_context)
-    breakpoint()
-    draw_captions_on_image(image_path, res)
+    root_path = "D:/Pytorch-master/YokoMeme/images_full"
+    image_name = "Im-going-to-change-the-world-For-the-better-right-Star-Wars.png"
+    image_path = os.path.join(root_path, image_name)
+    user_context= "The \"I'm going to change the world. For the better, right?\" meme template effectively communicates the duality of hope and skepticism regarding ambitious intentions. It captures the essence of idealism when someone expresses a noble desire to improve the world, yet pairs that optimism with a question that introduces doubt, highlighting the complexity of enacting real change. This juxtaposition resonates widely, reflecting a shared experience of facing harsh realities while aspiring to achieve positive outcomes. By incorporating elements of irony, the template invites reflection on the challenges and uncertainties that often accompany efforts to create a better future, making it relevant to a broad spectrum of social and political discourse."
+    annot = generator.generate_meme(image_path, user_context)
+    
+    # annot = [{'id': 1, 'text': 'Me when \nthe boss \nsays they\'re \n"working from home"', 'fontSize': 20, 'color': '#FFFFFF', 'lineBreaks': True}]
+
+    # breakpoint()
+    print(annot)
+    with open("filterJson.json", 'r') as file:
+        data = json.load(file)
+    for item in data:
+        if item["imageName"] == image_name:
+            draw_bbox_pillow(item["imageName"], item["initialCaptions"], item["imageWidth"], item['imageHeight'], annot)
+        
+    
+    
+    # breakpoint()
+    # draw_captions_on_image(image_path, res)
     # base_64_image = read_image(image_path)
     # width, height = get_width_height(image_path)
     # meme_topic = handle_requestCreateTopic(base_64_image, )

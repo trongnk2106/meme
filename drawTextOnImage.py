@@ -4,29 +4,61 @@ import base64
 import io
 import json
 
+
+import textwrap
+def wrap_text_to_fit(draw, text, font_path, max_width, max_height, max_font_size=80):
+    """
+    Tìm font lớn nhất có thể, wrap theo TỪ, không cắt ngang từ.
+    Trả về: font, wrapped_text (dùng '\n')
+    """
+    words = text.split()
+    font_size = 5
+    best_font = None
+    best_wrapped = ""
+
+    while font_size <= max_font_size:
+        font = ImageFont.truetype(font_path, font_size)
+        lines = []
+        current_line = ""
+
+        for word in words:
+            test_line = word if not current_line else current_line + " " + word
+            test_width = draw.textlength(test_line, font=font)
+            if test_width <= max_width:
+                current_line = test_line
+            else:
+                lines.append(current_line)
+                current_line = word
+
+        if current_line:
+            lines.append(current_line)
+
+        wrapped_text = "\n".join(lines)
+
+        # Đo kích thước sau khi wrap
+        bbox = draw.multiline_textbbox((0, 0), wrapped_text, font=font, spacing=4)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+
+        if text_w <= max_width and text_h <= max_height:
+            best_font = font
+            best_wrapped = wrapped_text
+            font_size += 1
+        else:
+            break
+
+    return best_font or ImageFont.truetype(font_path, 10), best_wrapped or text
 def hex_to_rgb(hex_color):
     """Chuyển mã hex thành RGB cho Pillow."""
     hex_color = hex_color.lstrip('#')
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
-def get_fit_font(draw, text, font_path, max_width, max_height, start_size=40):
-    """Tìm font size sao cho text fit trong box (Pillow >=10)."""
-    font_size = start_size
-    while font_size > 5:
-        font = ImageFont.truetype(font_path, font_size)
-        bbox = draw.multiline_textbbox((0, 0), text, font=font, spacing=4)
-        w = bbox[2] - bbox[0]
-        h = bbox[3] - bbox[1]
-        if w <= max_width and h <= max_height:
-            return font
-        font_size -= 1
-    return ImageFont.truetype(font_path, 10)  # fallback
 
 def draw_text_in_bbox_pillow(draw, text, bbox, color, font_path):
-    """Vẽ text nằm gọn trong bbox, tự co dãn font."""
+    """Vẽ text nằm gọn trong bbox, tự wrap + font."""
     x, y, w, h = bbox
-    font = get_fit_font(draw, text, font_path, w, h)
+    font, wrapped_text = wrap_text_to_fit(draw, text, font_path, w, h)
 
-    bbox_text = draw.multiline_textbbox((0, 0), text, font=font, spacing=4)
+    bbox_text = draw.multiline_textbbox((0, 0), wrapped_text, font=font, spacing=4)
     text_w = bbox_text[2] - bbox_text[0]
     text_h = bbox_text[3] - bbox_text[1]
 
@@ -36,11 +68,13 @@ def draw_text_in_bbox_pillow(draw, text, bbox, color, font_path):
 
     draw.multiline_text(
         (text_x, text_y),
-        text,
+        wrapped_text,
         fill=color,
         font=font,
         align="center",
-        spacing=4
+        spacing=4,
+        stroke_width=2,
+        stroke_fill=(0, 0, 0)  # viền đen
     )
 
 def draw_bbox_pillow(image_path, box_infos, ImageWidh_infile, ImageHeight_infile, annot, font_path="arial.ttf"):
@@ -71,13 +105,7 @@ def draw_bbox_pillow(image_path, box_infos, ImageWidh_infile, ImageHeight_infile
         h = int(box_info['height'] * ratio_height)
         angle = int(box_info['rotateAngle'])
 
-        # Vẽ bbox viền xanh lá
-        # draw.rectangle([(x, y), (x + w, y + h)], outline=(3, 252, 61), width=2)
-
-        # Vẽ ID
-        # draw.text((x + 5, y + 5), f"ID: {idx + 1}", fill=(255, 0, 0), font=ImageFont.truetype(font_path, 14))
-
-        # Vẽ caption nằm trong bbox
+    
         caption = ann['text']
         color = hex_to_rgb(ann['color'])
 
@@ -86,14 +114,4 @@ def draw_bbox_pillow(image_path, box_infos, ImageWidh_infile, ImageHeight_infile
     image.show()
     
     
-annot = [{'id': 1, 'text': 'Bad idea:\nTexting ex at 3am', 'fontSize': 22, 'color': '#000000', 'lineBreaks': True}, {'id': 2, 'text': 'Good vibes:\nWatching cat videos\nat 3am', 'fontSize': 22, 'color': '#000000', 'lineBreaks': True}]
 
-def load_json_data(file_path):
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-    return data
-data = load_json_data('filterJson.json')
-
-for item in data:
-    if item["imageName"] == "Drake-Hotline-Bling.png":
-        draw_bbox_pillow(item["imageName"], item["initialCaptions"], item["imageWidth"], item['imageHeight'], annot)
