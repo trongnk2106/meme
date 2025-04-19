@@ -1,8 +1,11 @@
-import openai
 from openai import OpenAI
 import pandas as pd
 import os 
 from dotenv import load_dotenv
+import requests
+from io import BytesIO
+from PIL import Image
+import base64
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
@@ -13,6 +16,16 @@ def get_embedding(text, model="text-embedding-3-small"):
     )
     return response.data[0].embedding
 
+def download_image(image_path):
+    # download image by url     
+    response = requests.get(image_path)
+    image = Image.open(BytesIO(response.content))
+    return image
+
+def image_to_base64(image: Image.Image):
+    buffered = BytesIO()
+    image.save(buffered, format="JPEG")  # hoặc PNG tùy ảnh
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 def get_description_for_image(csv_path, num_rows=10, get_all=False): 
     df = pd.read_csv(csv_path)

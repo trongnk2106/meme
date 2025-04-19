@@ -1,6 +1,6 @@
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
-from utils import get_embedding, get_description_for_image
+from src.utils.utils import get_embedding, get_description_for_image
 import numpy as np
 import pandas as pd
 class QdrantDBConnection:
@@ -52,21 +52,21 @@ class QdrantDBConnection:
         return result.points
         
 
-if __name__ == "__main__": 
+# if __name__ == "__main__": 
 
-    df = get_description_for_image('./meme_data.csv', num_rows=10, get_all=False)
-    # list_of_embeddings = [get_embedding(text) for text in df['sentence_full']]
-    emb = np.load('embeddings.npy') 
+#     df = get_description_for_image('./meme_data.csv', num_rows=10, get_all=False)
+#     # list_of_embeddings = [get_embedding(text) for text in df['sentence_full']]
+#     emb = np.load('embeddings.npy') 
 
     
-    qdrant_client = QdrantDBConnection(url="http://103.186.100.39:6333")
-    qdrant_client.index_data(df, emb)
+#     qdrant_client = QdrantDBConnection(url="http://103.186.100.39:6333")
+#     qdrant_client.index_data(df, emb)
     
-    res = qdrant_client.search("And Just Like That")
+#     res = qdrant_client.search("And Just Like That")
 
-    breakpoint()
-    print(res)    
-    # print(len(list_of_embeddings[0]))
+#     breakpoint()
+#     print(res)    
+#     # print(len(list_of_embeddings[0]))
     # list_of_embeddings = np.array(list_of_embeddings)
     # np.save('embeddings.npy', list_of_embeddings)
     

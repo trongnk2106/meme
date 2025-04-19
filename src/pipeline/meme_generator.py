@@ -10,7 +10,8 @@ from dotenv import load_dotenv
 import openai
 from openai import OpenAI
 import io 
-from drawTextOnImage import draw_bbox_pillow
+from src.utils.DrawMeme import draw_bbox_pillow
+from src.utils.utils import get_embedding, get_description_for_image, download_image, image_to_base64
 load_dotenv()
 openai_key = os.getenv("OPENAI_API_KEY")
 # client = OpenAI(api_key=openai_key)
@@ -27,9 +28,9 @@ class MemeGenerator:
             self.base64_image = base64.b64encode(image_file.read()).decode("utf-8")
 
     
-    def get_width_height(self, image_path):
-        with Image.open(image_path) as img:
-            self.image_width, self.image_height = img.size
+    # def get_width_height(self, image_path):
+    #     with Image.open(image_path) as img:
+    #         self.image_width, self.image_height = img.size
         
     def handle_requestCreateTopic(self, user_context, image_description):
         response = self.client.chat.completions.create(
@@ -163,54 +164,33 @@ class MemeGenerator:
 
         json_str = re.search(r'```json\n(.*?)```', llm_reponse, re.DOTALL).group(1)
         res = json.loads(json_str)
-
         return res
 
-    def generate_meme(self, image_path, user_context, image_description):
-        self.read_image(image_path)
-        self.get_width_height(image_path)
+    def generate_meme(self, image_url, user_context, image_description):
+        self.base64_image = image_to_base64(download_image(image_url))
         self.handle_requestCreateTopic(user_context, image_description)
         res = self.memegen()
         return res
 
-
-
-
-def draw_captions_on_image(image_path, data, output_path="output.jpg"):
-    img = Image.open(image_path).convert("RGB")
-    draw = ImageDraw.Draw(img)
-
-    for caption in data["captions"]:
-        x = caption["x"]
-        y = caption["y"]
-        text = caption["text"]
-        font_size = caption.get("fontSize", 24)
-
-        # Font fallback
-        try:
-            font = ImageFont.truetype("arial.ttf", font_size)
-        except:
-            font = ImageFont.load_default()
-
-        draw.text((x, y), text, font=font, fill="white", stroke_width=2, stroke_fill="black")
-
-    img.save(output_path)
-    img.show()
 
 if __name__ == "__main__": 
 
     generator = MemeGenerator()
     # Example image path
     root_path = "D:/Pytorch-master/YokoMeme/images_full"
-    image_name = "20240811T093822855Z.jpeg"
+    image_name = "20240812T111331432Z.jpeg"
     image_path = os.path.join(root_path, image_name)
-    user_context = "Stupid and Smart meme korea vs turkey"
-    image_description= "The \"Korea vs Turkey Shooting Olympics\" meme template communicates the spirited competition and rivalry between South Korea and Turkey, particularly in the context of sportsmanship during the Olympics. It encapsulates themes of national pride, cultural identity, and the humorous aspects of competition, using exaggerated imagery and relatable banter to create a lighthearted representation of the face-off. The template often emphasizes playful stereotypes and cultural clich\u00e9s, inviting fans from both sides to engage in a mocking yet friendly manner, demonstrating how sports can bring people together through shared experiences and laughter. Overall, it highlights the camaraderie and passionate fandom that characterize international sporting events, allowing for a fun exploration of national identities."
+    user_context = ""
+    image_description= "The Adorable Chinese Gymnast Olympics Medal meme template communicates a sense of unbridled joy and triumph in the face of achievement. It embodies the excitement associated with winning or accomplishing a significant goal, likening personal victories to the euphoric moment of an athlete celebrating a gold medal. This template often juxtaposes the innocence and exuberance of success with everyday situations, making it relatable and motivational. It captures the essence of pride, whether in sports, personal endeavors, or any form of celebration, conveying a universally understood sentiment of happiness and fulfillment that resonates with audiences in various contexts."
+    import time 
+    start = time.time()
     annot = generator.generate_meme(image_path,user_context , image_description)
-    
+    start_2 = time.time()
+    print("Time taken for meme generation: ", start_2 - start)
     # annot = [{'id': 1, 'text': 'Me when \nthe boss \nsays they\'re \n"working from home"', 'fontSize': 20, 'color': '#FFFFFF', 'lineBreaks': True}]
 
     # breakpoint()
+    # start_2 = time.time()
     print(annot)
     with open("filterJson.json", 'r') as file:
         data = json.load(file)
@@ -218,7 +198,9 @@ if __name__ == "__main__":
         if item["imageName"] == image_name:
             draw_bbox_pillow(item["imageName"], item["initialCaptions"], item["imageWidth"], item['imageHeight'], annot)
         
-    
+    # end_2 = time.time()
+    # end_3 = time.time()
+    # print("Time taken for meme generation: ", end_2 - start)
     
     # breakpoint()
     # draw_captions_on_image(image_path, res)
