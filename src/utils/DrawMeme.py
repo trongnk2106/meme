@@ -6,6 +6,8 @@ import json
 
 
 import textwrap
+
+
 def wrap_text_to_fit(draw, text, font_path, max_width, max_height, max_font_size=80):
     """
     Tìm font lớn nhất có thể, wrap theo TỪ, không cắt ngang từ.
@@ -48,10 +50,13 @@ def wrap_text_to_fit(draw, text, font_path, max_width, max_height, max_font_size
             break
 
     return best_font or ImageFont.truetype(font_path, 10), best_wrapped or text
+
+
 def hex_to_rgb(hex_color):
     """Chuyển mã hex thành RGB cho Pillow."""
-    hex_color = hex_color.lstrip('#')
-    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+    hex_color = hex_color.lstrip("#")
+    return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+
 
 def draw_text_in_bbox_pillow(draw, text, bbox, color, font_path):
     """Vẽ text nằm gọn trong bbox, tự wrap + font."""
@@ -74,10 +79,18 @@ def draw_text_in_bbox_pillow(draw, text, bbox, color, font_path):
         align="center",
         spacing=4,
         stroke_width=2,
-        stroke_fill=(0, 0, 0)  # viền đen
+        stroke_fill=(0, 0, 0),  # viền đen
     )
 
-def draw_bbox_pillow(image_path, box_infos, ImageWidh_infile, ImageHeight_infile, annot, font_path="arial.ttf"):
+
+def draw_bbox_pillow(
+    image_path,
+    box_infos,
+    ImageWidh_infile,
+    ImageHeight_infile,
+    annot,
+    font_path="arial.ttf",
+):
     """
     Vẽ bbox và caption bằng Pillow (đẹp hơn OpenCV).
 
@@ -90,6 +103,7 @@ def draw_bbox_pillow(image_path, box_infos, ImageWidh_infile, ImageHeight_infile
         font_path (str): Đường dẫn đến font .ttf
     """
     from PIL import ImageOps, ImageDraw, ImageFont
+
     image = Image.open(os.path.join("images", image_path)).convert("RGB")
     draw = ImageDraw.Draw(image)
     image_width, image_height = image.size
@@ -99,19 +113,15 @@ def draw_bbox_pillow(image_path, box_infos, ImageWidh_infile, ImageHeight_infile
 
     for idx, (box_info, ann) in enumerate(zip(box_infos, annot)):
         # Scale tọa độ
-        x = int(box_info['x'] * ratio_width)
-        y = int(box_info['y'] * ratio_height)
-        w = int(box_info['width'] * ratio_width)
-        h = int(box_info['height'] * ratio_height)
-        angle = int(box_info['rotateAngle'])
+        x = int(box_info["x"] * ratio_width)
+        y = int(box_info["y"] * ratio_height)
+        w = int(box_info["width"] * ratio_width)
+        h = int(box_info["height"] * ratio_height)
+        angle = int(box_info["rotateAngle"])
 
-    
-        caption = ann['text']
-        color = hex_to_rgb(ann['color'])
+        caption = ann["text"]
+        color = hex_to_rgb(ann["color"])
 
         draw_text_in_bbox_pillow(draw, caption, (x, y, w, h), color, font_path)
 
     image.show()
-    
-    
-
