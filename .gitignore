@@ -1,0 +1,7 @@
+.vscode/
+images/
+images_full/
+.env/
+**.csv
+*.npy
+__pycache__/
