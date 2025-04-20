@@ -90,11 +90,24 @@ class MemePipeline:
             image_width_box = draw_bbox(
                 image, image_initial_captions, image_width, image_height
             )
-            image_width_box.show()
 
-            image = image_to_base64(image_width_box, extension=self.extension)
-            # meme = self.meme_generator.generate_meme(df_info=df_info)
-            # list_meme.append(meme)
+            image_width_box = image_to_base64(image_width_box, extension=self.extension)
+            meme = self.meme_generator.generate_meme(
+                image=image_width_box,
+                user_context=query,
+                image_description=image_description,
+                extension=self.extension,
+            )
+            image_draw = draw_bbox_pillow(
+                image=image,
+                box_infos=image_initial_captions,
+                ImageWidh_infile=image_width,
+                ImageHeight_infile=image_height,
+                annot=meme,
+            )
+            image_draw.show()
+        # return image_draw
+        # list_meme.append(meme)
         # for meme_context, image_url in zip(list_of_memes, list_images_urls):
 
         #     meme = self.meme_generator.generate_meme(

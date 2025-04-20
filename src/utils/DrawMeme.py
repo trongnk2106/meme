@@ -84,7 +84,7 @@ def draw_text_in_bbox_pillow(draw, text, bbox, color, font_path):
 
 
 def draw_bbox_pillow(
-    image_path,
+    image,
     box_infos,
     ImageWidh_infile,
     ImageHeight_infile,
@@ -104,7 +104,6 @@ def draw_bbox_pillow(
     """
     from PIL import ImageOps, ImageDraw, ImageFont
 
-    image = Image.open(os.path.join("images", image_path)).convert("RGB")
     draw = ImageDraw.Draw(image)
     image_width, image_height = image.size
 
@@ -124,4 +123,5 @@ def draw_bbox_pillow(
 
         draw_text_in_bbox_pillow(draw, caption, (x, y, w, h), color, font_path)
 
-    image.show()
+    return image
+

@@ -36,7 +36,11 @@ class MemeGenerator:
     #     with Image.open(image_path) as img:
     #         self.image_width, self.image_height = img.size
 
-    def handle_requestCreateTopic(self, user_context, image_description):
+    def handle_requestCreateTopic(
+        self,
+        user_context,
+        image_description,
+    ):
         response = self.client.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -156,12 +160,12 @@ class MemeGenerator:
         )
 
         llm_reponse = response.choices[0].message.content
-        breakpoint()
+        # breakpoint()
         json_str = re.search(r"```json\n(.*?)```", llm_reponse, re.DOTALL).group(1)
         res = json.loads(json_str)
         return res
 
-    def generate_meme(self, image, user_context, image_description):
+    def generate_meme(self, image, user_context, image_description, extension):
         # self.extension = os.path.splitext(image_url)[1][
         #     1:
         # ]  # Get the file extension without the dot
@@ -177,6 +181,8 @@ class MemeGenerator:
         # self.base64_image = image_to_base64(
         #     download_image(image_url), extension=self.extension
         # )
+        self.base64_image = image
+        self.extension = extension
         self.handle_requestCreateTopic(user_context, image_description)
         res = self.memegen()
         return res
